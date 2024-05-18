@@ -51,7 +51,7 @@ suite('Functional Tests', function() {
             .get("/api/threads/abord")
             .end(function(err, res){
                 assert.equal(res.status, 200, 'Response status should be 200');
-                let jsonBody = JSON.parse(res.body);
+                let jsonBody = res.body;
                 assert.isArray(jsonBody, "Response should be a json array");
                 assert.equal(jsonBody.length, 10, 'The json array should be of length 10');
                 for(let entry of jsonBody){
@@ -120,7 +120,7 @@ suite('Functional Tests', function() {
             .get("/api/replies/abord?thread_id="+lastId)
             .end(function(err, res){
                 assert.equal(res.status, 200, 'Response status should be 200');
-                let parsedBody = JSON.parse(res.body);
+                let parsedBody = res.body;
                 assert.isAtLeast(parsedBody.replies.length, 1, "There should be at least one reply.")
                 done()
             })
@@ -133,7 +133,7 @@ suite('Functional Tests', function() {
             .get("/api/replies/abord?thread_id="+lastId)
             .end(function(err, res){
                 assert.equal(res.status, 200, 'Response status should be 200');
-                let parsedBody = JSON.parse(res.body);
+                let parsedBody = res.body;
                 replyId = parsedBody.replies[0]._id
                 chai
                     .request(server).keepOpen()
@@ -154,7 +154,7 @@ suite('Functional Tests', function() {
             .get("/api/replies/abord?thread_id="+lastId)
             .end(function(err, res){
                 assert.equal(res.status, 200, 'Response status should be 200');
-                let parsedBody = JSON.parse(res.body);
+                let parsedBody = res.body;
                 replyId = parsedBody.replies[0]._id
                 chai
                     .request(server).keepOpen()
@@ -185,7 +185,7 @@ suite('Functional Tests', function() {
             .get("/api/replies/abord?thread_id="+lastId)
             .end(function(err, res){
                 assert.equal(res.status, 200, 'Response status should be 200');
-                let parsedBody = JSON.parse(res.body);
+                let parsedBody = res.body;
                 replyId = parsedBody.replies[0]._id
                 chai
                     .request(server).keepOpen()

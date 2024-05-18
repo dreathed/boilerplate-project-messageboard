@@ -2,17 +2,51 @@
 let mongoose = require("mongoose");
 let bcrypt = require("bcrypt")
 
-let board = require("../models/board");
+let thread = mongoose.Schema({
+    board: {
+      type: String,
+      default: ""
+    },
+    text: {
+      type: String,
+      default: ""
+    },
+    delete_password: {
+      type: String,
+      required: true
+    },
+    created_on: {
+      type: Date,
+      default: new Date()
+    },
+    bumped_on: {
+      type: Date,
+      default: new Date()
+    },
+    replies: {
+      type: Array,
+      default: []
+    },
+    reported: {
+      type: Boolean,
+      default: false
+    }
+  })
+
+//let board = mongoose.model("threads", thread);
+let board = require("../models/board")
 
 module.exports = async function (app) {
   app.route('/api/threads/:board')
     .post(async (req, res) => {
+      console.log(req.params)
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
         bcrypt.hash(req.body.delete_password, 13, (err, hash)=>{
           if(!err){
-            let data = new board({board: req.body["board"], text: req.body["text"], delete_password: hash})
-            data.save()
-            res.send("OK")
+            let data = new board({board: req.params["board"], text: req.body["text"], delete_password: hash})
+            data.save().then(()=>{
+              res.send("OK")
+            })
           }else{
             res.send("an error occured could not save.")
           }
@@ -25,12 +59,15 @@ module.exports = async function (app) {
         for(let thread of data){
           thread.replies.sort((a,b)=>{return b.created_on - a.created_on })
           thread.replies = thread.replies.slice(0,3)
+          data.created_on = new Date(data.created_on).toDateString();
+          data.bumped_on = new Date(data.bumped_on).toDateString();
           for(let reply of thread.replies){
+            reply.created_on = new Date(reply.created_on).toDateString();
             delete reply.delete_password;
             delete reply.reported;
           }
         }
-        res.json(JSON.stringify(data))
+        res.json(data)
     })
     .delete(async (req, res) => {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
@@ -61,13 +98,17 @@ module.exports = async function (app) {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
       let data = await board.findById(req.body["thread_id"]).exec()
       if(data){
-        data.bumped_on = Date.now()
+        data.bumped_on = new Date();
         let objectId = new mongoose.Types.ObjectId().toString();
         bcrypt.hash(req.body.delete_password, 13, (err, hash) => {
           if(!err){
-            data.replies.push({_id: objectId, text: req.body["text"], delete_password: hash, created_on: Date.now(), reported: false})
-            data.save()
-            res.send("OK")
+            data.replies.push({_id: objectId, text: req.body["text"], delete_password: hash, created_on: new Date(), reported: false})
+            data.markModified("bumped_on")
+            data.markModified("replies") 
+            data.save().then(()=>{
+              res.send("OK")
+            })
+            
           }else{
             res.send("an error occured could not save.")
           }
@@ -78,12 +119,14 @@ module.exports = async function (app) {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
 
       let data = await board.findById(req.query.thread_id).select({delete_password: 0, reported: 0}).exec()
-
+      data.created_on = new Date(data.created_on).toDateString();
+      data.bumped_on = new Date(data.bumped_on).toDateString();
       for(let reply of data.replies){
+        reply.created_on = new Date(reply.created_on).toDateString();
         delete reply.delete_password;
         delete reply.reported;
       }
-      res.json(JSON.stringify(data));
+      res.json(data);
     })
     .delete(async (req, res) => {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
