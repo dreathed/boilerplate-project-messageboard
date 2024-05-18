@@ -56,18 +56,24 @@ module.exports = async function (app) {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
         let data = await board.find({board: req.params["board"]}).select({delete_password: 0, reported: 0}).sort({bumped_on: "desc"}).exec()
         data = data.slice(0,10);
+        let response = [];
         for(let thread of data){
-          thread.replies.sort((a,b)=>{return b.created_on - a.created_on })
-          thread.replies = thread.replies.slice(0,3)
-          data.created_on = new Date(data.created_on).toDateString();
-          data.bumped_on = new Date(data.bumped_on).toDateString();
+          let resThread = JSON.parse(JSON.stringify(thread))
+          resThread.replies.sort((a,b)=>{return b.created_on - a.created_on })
+          resThread.replies = thread.replies.slice(0,3)
+          resThread.created_on = new Date(thread.created_on).toDateString();
+          resThread.bumped_on = new Date(thread.bumped_on).toDateString();
+          resThread.replies = []
           for(let reply of thread.replies){
             reply.created_on = new Date(reply.created_on).toDateString();
             delete reply.delete_password;
             delete reply.reported;
+            resThread.replies.push(reply)
           }
+          console.log(resThread)
+          response.push(resThread)
         }
-        res.json(data)
+        res.json(response)
     })
     .delete(async (req, res) => {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
@@ -119,14 +125,17 @@ module.exports = async function (app) {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })
 
       let data = await board.findById(req.query.thread_id).select({delete_password: 0, reported: 0}).exec()
-      data.created_on = new Date(data.created_on).toDateString();
-      data.bumped_on = new Date(data.bumped_on).toDateString();
+      let responseData = JSON.parse(JSON.stringify(data))
+      responseData.created_on = new Date(data.created_on).toDateString();
+      responseData.bumped_on = new Date(data.bumped_on).toDateString();
+      responseData.replies = []
       for(let reply of data.replies){
         reply.created_on = new Date(reply.created_on).toDateString();
         delete reply.delete_password;
         delete reply.reported;
+        responseData.replies.push(reply)
       }
-      res.json(data);
+      res.json(responseData);
     })
     .delete(async (req, res) => {
       await mongoose.connect(process.env.DB,{ useNewUrlParser: true, useUnifiedTopology: true })

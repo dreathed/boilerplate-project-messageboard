@@ -14,7 +14,7 @@ const app = express();
 
 app.use(helmet({
   referrerPolicy: {
-    policy: "origin",
+    policy: "same-origin",
   }
 }))
 
